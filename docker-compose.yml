@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: pooler_finTech_postgres
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - '5432:5432'
+
