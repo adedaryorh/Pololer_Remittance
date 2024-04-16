@@ -24,6 +24,7 @@ func (a Account) router(server *Server) {
 	serverGroup.POST("transfer", a.transfer)
 	serverGroup.POST("add-money", a.addMoney)
 	serverGroup.POST("withdraw-money", a.withdrawMoney)
+	serverGroup.POST("transactions", a.getTransactions)
 
 }
 
@@ -261,7 +262,7 @@ func (a *Account) withdrawMoney(ctx *gin.Context) {
 	args := db.CreateMoneyRecordParams{
 		CustomerID: account.CustomerID,
 		Status:     "pending",
-		Amount:     -req.Amount, // Negative amount for withdrawal
+		Amount:     -req.Amount,
 		Reference:  req.Reference,
 	}
 	_, err = a.server.queries.CreateMoneyRecord(context.Background(), args)
@@ -288,4 +289,46 @@ func (a *Account) withdrawMoney(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Withdrawal successful"})
+}
+
+type GetTransactionsRequest struct {
+	AccountID int32 `json:"account_id" binding:"required"`
+}
+
+func (a *Account) getTransactions(ctx *gin.Context) {
+	userId, err := utils.GetActiveCustomer(ctx)
+	if err != nil {
+		return
+	}
+
+	var info GetTransactionsRequest
+
+	eViewer := gValid.Validator(GetTransactionsRequest{})
+	if err := ctx.ShouldBindJSON(&info); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": utils.HandleError(err, ctx, eViewer)})
+		return
+	}
+
+	account, err := a.server.queries.GetAccountByID(context.Background(), int64(info.AccountID))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't get account"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if account.CustomerID != int32(userId) {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't get account"})
+		return
+	}
+
+	transactions, err := a.server.queries.GetEntryByAccountId(context.Background(), info.AccountID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, transactions)
 }

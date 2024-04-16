@@ -32,6 +32,12 @@ UPDATE accounts SET account_type = $1 WHERE id = $2 RETURNING *;
 -- name: UpdateAccountStatus :one
 UPDATE accounts SET account_status = $1 WHERE id = $2 RETURNING *;
 
+-- name: GetAccountByAccountNumber :one
+SELECT accounts.*, customer.email
+FROM accounts
+JOIN customer ON accounts.customer_id = customer.id
+WHERE account_number = $1;
+
 -- name: DeleteAccount :exec
 DELETE FROM accounts WHERE id = $1;
 

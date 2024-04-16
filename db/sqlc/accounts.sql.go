@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createAccount = `-- name: CreateAccount :one
@@ -66,6 +67,42 @@ DELETE FROM accounts
 func (q *Queries) DeleteAllAccount(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteAllAccount)
 	return err
+}
+
+const getAccountByAccountNumber = `-- name: GetAccountByAccountNumber :one
+SELECT accounts.id, accounts.customer_id, accounts.balance, accounts.account_type, accounts.account_status, accounts.currency, accounts.created_at, accounts.account_number, customer.email
+FROM accounts
+JOIN customer ON accounts.customer_id = customer.id
+WHERE account_number = $1
+`
+
+type GetAccountByAccountNumberRow struct {
+	ID            int64          `json:"id"`
+	CustomerID    int32          `json:"customer_id"`
+	Balance       float64        `json:"balance"`
+	AccountType   string         `json:"account_type"`
+	AccountStatus string         `json:"account_status"`
+	Currency      string         `json:"currency"`
+	CreatedAt     time.Time      `json:"created_at"`
+	AccountNumber sql.NullString `json:"account_number"`
+	Email         string         `json:"email"`
+}
+
+func (q *Queries) GetAccountByAccountNumber(ctx context.Context, accountNumber sql.NullString) (GetAccountByAccountNumberRow, error) {
+	row := q.db.QueryRowContext(ctx, getAccountByAccountNumber, accountNumber)
+	var i GetAccountByAccountNumberRow
+	err := row.Scan(
+		&i.ID,
+		&i.CustomerID,
+		&i.Balance,
+		&i.AccountType,
+		&i.AccountStatus,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.AccountNumber,
+		&i.Email,
+	)
+	return i, err
 }
 
 const getAccountByCustomerId = `-- name: GetAccountByCustomerId :many
