@@ -18,10 +18,10 @@ type Customer struct {
 
 func (u Customer) router(server *Server) {
 	u.server = server
-	//AuthenticatedMiddleware()
-	serverGroup := server.router.Group("/customer")
+
+	serverGroup := server.router.Group("/customer", AuthenticatedMiddleware())
 	serverGroup.GET("", u.listCustomers)
-	serverGroup.GET("me", u.getLoggedInCustomer)
+	serverGroup.GET("loggedIn", u.getLoggedInCustomer)
 	serverGroup.POST("createCustomer", u.createCustomer)
 }
 

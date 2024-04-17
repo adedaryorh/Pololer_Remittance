@@ -16,9 +16,8 @@ type Account struct {
 
 func (a Account) router(server *Server) {
 	a.server = server
-	//AuthenticatedMiddleware()
 
-	serverGroup := server.router.Group("/account")
+	serverGroup := server.router.Group("/account", AuthenticatedMiddleware())
 	serverGroup.POST("create-account", a.createAccount)
 	serverGroup.GET("", a.getCustomerAccounts)
 	serverGroup.POST("transfer", a.transfer)

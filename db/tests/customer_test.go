@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var usedGenders = make(map[string]struct{}) // Maintain a set of used genders
+var usedGenders = make(map[string]struct{})
 
 func createRandomCustomer(t *testing.T) db.Customer {
 	hashedPass, err := utils.GenerateHashedPassword(utils.RandomString(8))
